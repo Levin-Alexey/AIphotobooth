@@ -1,4 +1,4 @@
-name = "telegram-bot"
+name = "aiphotobooth"
 main = "index.js"
 type = "service"
 compatibility_date = "2026-01-01"
