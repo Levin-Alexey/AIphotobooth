@@ -1,0 +1,11 @@
+name = "telegram-bot"
+main = "index.js"
+type = "service"
+compatibility_date = "2026-01-01"
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[[env.production.r2_buckets]]
+binding = "BUCKET"
+bucket_name = "telegram-bot-bucket"
