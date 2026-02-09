@@ -3,9 +3,17 @@ main = "index.js"
 type = "service"
 compatibility_date = "2026-01-01"
 
-[env.production]
-vars = { ENVIRONMENT = "production" }
+# Переменные
+[vars]
+ENVIRONMENT = "production"
 
-[[env.production.r2_buckets]]
+# R2 Бакет (правильный)
+[[r2_buckets]]
 binding = "BUCKET"
-bucket_name = "telegram-bot-bucket"
+bucket_name = "fotoai"
+
+# D1 База данных (правильная)
+[[d1_databases]]
+binding = "DB"
+database_name = "foto_db"
+database_id = "03828eee-b0eb-4e46-9dd1-903d26dceab4"
