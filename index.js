@@ -53,13 +53,13 @@ export default {
               break;
             }
             case INLINE_KEYS.READY_PHOTO: {
-              const { text, replyMarkup } = await handleReadyPhoto();
-              await sendMessage(BOT_TOKEN, chatId, text, replyMarkup);
+              const { photo, caption, replyMarkup } = await handleReadyPhoto();
+              await sendPhoto(BOT_TOKEN, chatId, photo, caption, replyMarkup);
               break;
             }
             case INLINE_KEYS.CUSTOM_EDIT: {
-              const { text, replyMarkup } = await handleCustomEdit();
-              await sendMessage(BOT_TOKEN, chatId, text, replyMarkup);
+              const { photo, caption, replyMarkup } = await handleCustomEdit();
+              await sendPhoto(BOT_TOKEN, chatId, photo, caption, replyMarkup);
               break;
             }
             case INLINE_KEYS.CARE: {
