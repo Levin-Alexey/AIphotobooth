@@ -6,6 +6,7 @@ compatibility_date = "2026-01-01"
 # Переменные
 [vars]
 ENVIRONMENT = "production"
+YOOKASSA_SHOP_ID = "1249956"
 
 # R2 Бакет (правильный)
 [[r2_buckets]]
@@ -17,3 +18,13 @@ bucket_name = "fotoai"
 binding = "DB"
 database_name = "foto_db"
 database_id = "03828eee-b0eb-4e46-9dd1-903d26dceab4"
+
+# KV Namespace
+[[kv_namespaces]]
+binding = "KV"
+id = "6e3f07dbb09b45f3bb10046e502c8d9a"
+
+# Queue
+[[queues.producers]]
+binding = "Queue"
+queue = "aiphotobooth"
