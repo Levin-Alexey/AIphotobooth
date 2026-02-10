@@ -10,6 +10,10 @@ import handleSeasonalSession from './handlers/Sessions/seasonalSession.js';
 import handleFamilySession from './handlers/Sessions/familySession.js';
 import handleHomeSession from './handlers/Sessions/homeSession.js';
 import handlePortraitSession from './handlers/Sessions/portraitSession.js';
+import handleMakeUniquePhoto from './handlers/Custom/makeUniquePhoto.js';
+import { handleUniquePhotoPay } from './handlers/Custom/uniquePhotoPay.js';
+import { handleUniquePhotoPrompt, handleUniquePhotoUpload } from './handlers/Custom/uniquePhotoHandler.js';
+import { handlePaymentCallback } from './handlers/payments/paymentCallback.js';
 
 const TELEGRAM_API = 'https://api.telegram.org/bot';
 
@@ -24,6 +28,12 @@ const INLINE_KEYS = {
 export default {
   async fetch(request, env) {
     const BOT_TOKEN = env.BOT_TOKEN; // Токен бота из переменных окружения
+    const url = new URL(request.url);
+    
+    // Обработка webhook от Юкассы
+    if (url.pathname === '/payment-callback' && request.method === 'POST') {
+      return await handlePaymentCallback(request, env, BOT_TOKEN);
+    }
     
     if (request.method === 'POST') {
       try {
@@ -33,12 +43,26 @@ export default {
         if (update.message) {
           const chatId = update.message.chat.id;
           const text = update.message.text;
+          const photo = update.message.photo;
           const user = update.message.from;
+          const telegramId = user.id;
+          
+          // Обработка фото для unique photo
+          if (photo) {
+            const handled = await handleUniquePhotoUpload(env, telegramId, chatId, photo, BOT_TOKEN);
+            if (handled) {
+              return new Response('OK', { status: 200 });
+            }
+          }
           
           // Обработка команды /start
           if (text === '/start') {
             await upsertUser(env.DB, user);
             await sendMainMenu(BOT_TOKEN, chatId);
+          } else if (text) {
+            // Обработка текстовых сообщений (промпт для unique photo)
+            const handled = await handleUniquePhotoPrompt(env, telegramId, chatId, text, BOT_TOKEN);
+            // Если не обработали - можно добавить другую логику
           }
         }
 
@@ -105,6 +129,16 @@ export default {
               await sendMessage(BOT_TOKEN, chatId, text, replyMarkup);
               break;
             }
+            case 'custom_edit_make': {
+              const { text, replyMarkup } = await handleMakeUniquePhoto();
+              await sendMessage(BOT_TOKEN, chatId, text, replyMarkup);
+              break;
+            }
+            case 'custom_unique_pay': {
+              const telegramId = update.callback_query.from.id;
+              await handleUniquePhotoPay(env, telegramId, chatId, BOT_TOKEN);
+              break;
+            }
             default:
               await sendMessage(BOT_TOKEN, chatId, 'Неизвестная команда');
           }
@@ -118,6 +152,19 @@ export default {
     }
     
     return new Response('Bot is running', { status: 200 });
+  },
+
+  async queue(batch, env) {
+    // Queue consumer для обработки заказов из очереди
+    const { processQueueMessage } = await import('./services/queueConsumer.js');
+    for (const message of batch.messages) {
+      try {
+        await processQueueMessage(message.body, env);
+      } catch (error) {
+        console.error('Error processing queue message:', error);
+        throw error; // Retry message
+      }
+    }
   }
 };
 

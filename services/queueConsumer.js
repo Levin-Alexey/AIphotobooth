@@ -11,21 +11,29 @@
  * - Отправка ссылки пользователю в Telegram
  */
 
-import { OrderService } from './services/order.js';
+import { OrderService } from './order.js';
+import { processUniquePhoto } from './uniquePhotoProcessor.js';
 
 /**
- * Обработчик сообщений из Queue
- * Вызывается для каждого сообщения в очереди
+ * Обработчик сообщения из Queue
  */
-export async function handleQueueMessage(message, env) {
+export async function processQueueMessage(message, env) {
   try {
-    const { type, orderId, telegramId, chatId, packId, paymentId } = message;
+    const { type } = message;
 
+    // Обработка уникального фото через OpenRouter
+    if (type === 'process_unique_photo') {
+      await processUniquePhoto(env, message);
+      return;
+    }
+
+    // Обработка стандартных заказов
     if (type !== 'process_order') {
       console.log('Unknown message type:', type);
       return;
     }
 
+    const { orderId, telegramId, chatId, packId, paymentId } = message;
     console.log(`Processing order ${orderId} for user ${telegramId}`);
 
     const orderService = new OrderService(env.DB);

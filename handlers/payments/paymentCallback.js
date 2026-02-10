@@ -10,8 +10,8 @@
  * 5. Ставит заказ в очередь на обработку
  */
 
-import { YookassaService } from '../services/yookassa.js';
-import { OrderService, PaymentService } from '../services/order.js';
+import { YookassaService } from '../../services/yookassa.js';
+import { OrderService, PaymentService } from '../../services/order.js';
 
 export async function handlePaymentCallback(request, env, BOT_TOKEN) {
   try {
@@ -64,11 +64,30 @@ export async function handlePaymentCallback(request, env, BOT_TOKEN) {
         await orderService.markOrderAsPaid(orderId, paymentId);
 
         // 9. Отправляем подтверждение пользователю в Telegram
-        await sendTelegramNotification(
-          BOT_TOKEN,
-          chatId,
-          `✅ Оплата прошла успешно!\n\nНомер заказа: #${orderId}\nСумма: ${(amount / 100).toFixed(2)} ₽\n\nОбработка начнется в ближайшее время...`
-        );
+        // Для custom_unique отправляем запрос промпта
+        if (packId === 'custom_unique') {
+          await sendTelegramNotification(
+            BOT_TOKEN,
+            chatId,
+            `✅ Оплата прошла успешно!\n\nНапишите, как нужно обработать фото.\nОпишите подробно, что вы хотите видеть на фотографии.`
+          );
+          // Сохраняем в KV что ждем промпт от этого пользователя
+          if (env.KV) {
+            await env.KV.put(`awaiting_prompt_${telegramId}`, JSON.stringify({
+              orderId: orderId,
+              chatId: chatId,
+              stage: 'prompt',
+              timestamp: Date.now()
+            }), { expirationTtl: 3600 }); // 1 час
+          }
+        } else {
+          // Для остальных типов - стандартное сообщение
+          await sendTelegramNotification(
+            BOT_TOKEN,
+            chatId,
+            `✅ Оплата прошла успешно!\n\nНомер заказа: #${orderId}\nСумма: ${(amount / 100).toFixed(2)} ₽\n\nОбработка начнется в ближайшее время...`
+          );
+        }
 
         // 10. Ставим заказ в очередь на обработку
         if (env.Queue) {

@@ -8,8 +8,8 @@
  * 3. Отправляет пользователю ссылку для оплаты
  */
 
-import { YookassaService, getPaymentDetails } from '../services/yookassa.js';
-import { OrderService } from '../services/order.js';
+import { YookassaService, getPaymentDetails } from '../../services/yookassa.js';
+import { OrderService } from '../../services/order.js';
 
 /**
  * Инициирует платеж для покупки услуги
@@ -27,7 +27,7 @@ export async function initiatePayment(
   chatId,
   paymentType,
   botToken,
-  returnUrl = 'https://pay.ai-mommy.ru/return'
+  returnUrl = 'https://t.me/Magical_photo_booth_bot'
 ) {
   try {
     // 1. Валидируем входные данные
@@ -71,7 +71,8 @@ export async function initiatePayment(
       paymentDetails.amount,
       paymentDetails.description,
       returnUrl,
-      metadata
+      metadata,
+      env.MAIL // Email для чека
     );
 
     if (!paymentResponse.confirmation || !paymentResponse.confirmation.confirmation_url) {

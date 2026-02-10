@@ -16,9 +16,10 @@ export class YookassaService {
    * @param {string} description - Описание платежа (макс 128 символов)
    * @param {string} returnUrl - URL для возврата после платежа
    * @param {object} metadata - Метаданные (telegramId, chatId, type, packId и т.д.)
+   * @param {string} customerEmail - Email покупателя для чека
    * @returns {Promise<object>} Объект платежа с confirmation_url
    */
-  async createPayment(amount, description, returnUrl, metadata = {}) {
+  async createPayment(amount, description, returnUrl, metadata = {}, customerEmail = null) {
     const idempotenceKey = this.generateIdempotenceKey();
 
     const payload = {
@@ -32,7 +33,25 @@ export class YookassaService {
         return_url: returnUrl
       },
       description: description.substring(0, 128), // Максимум 128 символов
-      metadata: metadata
+      metadata: metadata,
+      receipt: {
+        customer: {
+          email: customerEmail || 'noreply@ai-mommy.ru'
+        },
+        items: [
+          {
+            description: description.substring(0, 128),
+            quantity: '1.00',
+            amount: {
+              value: (amount / 100).toFixed(2),
+              currency: 'RUB'
+            },
+            vat_code: 1, // НДС не облагается
+            payment_mode: 'full_payment',
+            payment_subject: 'service'
+          }
+        ]
+      }
     };
 
     const auth = btoa(`${this.shopId}:${this.secretKey}`);
@@ -152,6 +171,10 @@ export function getPaymentDetails(type, packId, metadata = {}) {
     custom_edit: {
       description: '🎨 Генерация фото по описанию',
       amount: 149900 // 1499 рублей
+    },
+    custom_unique: {
+      description: '🎨 Уникальное фото с AI',
+      amount: 1000 // 10 рублей
     }
   };
 
